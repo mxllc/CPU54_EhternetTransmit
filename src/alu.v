@@ -1,0 +1,245 @@
+`timescale 1ns / 1ps
+
+module alu(
+input [31:0] a, //32 位输入，操作数1
+input [31:0] b, //32 位输入，操作数2
+input [3:0] aluc, //4 位输入，控制 alu 的操作
+output reg [31:0] r, //32 位输出，由a、b 经过aluc 指定的操作生成
+output reg zero, //0 标志位
+output reg carry, // 进位标志位
+output reg negative, // 负数标志位
+output reg overflow // 溢出标志位
+);
+
+reg signed [31:0] alg;
+reg [32:0] temp;
+always @(*)
+begin
+casex(aluc)
+4'b0000://Addu
+    begin
+        temp=a+b;
+        r=temp;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(temp[32])
+            carry=1;
+        else
+            carry=0;       
+        if(r[31])
+            negative=1;
+        else
+            negative=0;
+        overflow=0;
+    end
+4'b0010://Add
+    begin
+        r=a+b;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(!a[31]&&!b[31]&&r[31]||a[31]&&b[31]&&!r[31])//(正+负和负+正不会溢出),正+正||负+负
+            overflow=1;
+        else  
+            overflow=0;  
+        if(r[31])
+            negative=1;
+        else
+            negative=0;
+        carry=0;
+    end
+4'b0001://Subu
+    begin
+        r=a-b;
+        if(a<b)
+            carry=1;
+        else
+            carry=0;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;
+        overflow=0;
+    end
+4'b0011://Sub
+    begin
+        r=a-b;        
+        if(!a[31]&&b[31]&&r[31]||a[31]&&!b[31]&&!r[31])//（负-负和正-正不会溢出），正-负||负-正可能溢出
+            overflow=1;
+        else
+            overflow=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;  
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        carry=0;
+    end
+4'b0100://And
+    begin
+    r=a&b;
+    if(r==0)
+        zero=1;
+    else
+        zero=0;
+    if(r[31])
+        negative=1;
+    else
+        negative=0;
+    carry=0;
+    overflow=0;
+    end
+4'b0101://Or
+    begin
+    r=a|b;
+    if(r==0)
+        zero=1;
+    else
+        zero=0;
+    if(r[31])
+        negative=1;
+    else
+        negative=0;   
+    carry=0;
+    overflow=0;
+    end
+4'b0110://Xor
+    begin
+        r=a^b;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;
+        carry=0;
+        overflow=0;
+    end
+    
+4'b0111://Nor
+    begin
+        r=~(a|b);
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;     
+        carry=0;
+        overflow=0;
+    end
+4'b100x://Lui
+    begin
+        r={b[15:0],16'b0};
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;   
+        carry=0;
+        overflow=0;   
+    end
+4'b1011://Slt
+    begin
+        if(a[31]&&!b[31]||!a[31]&&!b[31]&&a<b||a[31]&&b[31]&&a[30:0]<b[30:0])//负<正||正<正||负<负 (正恒>负)
+            r=1;
+        else
+            r=0;
+        if(a==b)
+            zero=1;
+        else
+            zero=0;
+        negative=r; 
+        carry=0;
+        overflow=0;
+    end
+4'b1010://Sltu
+    begin
+        if(a<b)
+            begin
+                carry=1;
+                r=1;
+            end
+        else
+            begin
+                carry=0;
+                r=0;
+            end
+        zero=a==b?1:0;         
+        negative=0;
+        overflow=0;     
+    end
+4'b1100://Sra
+    begin 
+        alg=b;
+        r=alg>>>a[4:0];//调试的时候注意一下这个地方是否有问题  
+        if(a<=32&&a>0)
+            carry=b[a-1];
+        else
+            carry=b[31];         
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;  
+        overflow=0; 
+    end
+4'b111x://Sll//Slr
+    begin
+        r=b<<a[4:0];
+        if(a<=32&&a>0)
+            carry=b[32-a];
+        else
+            carry=0;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0; 
+        overflow=0; 
+    end
+4'b1101://Srl
+    begin
+        r=b>>a[4:0];
+        if(a<32&&a>0)
+            carry=b[a-1];
+        else
+            carry=0;
+        if(r==0)
+            zero=1;
+        else
+            zero=0;
+        if(r[31])
+            negative=1;
+        else
+            negative=0;
+        overflow=0;  
+    end
+endcase
+
+end
+
+endmodule

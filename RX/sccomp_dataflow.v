@@ -23,14 +23,30 @@
 module sccomp_dataflow(
 input clk_in,
 input reset,
-input [15:0] sw,
-output [7:0] o_seg,
-output [7:0] o_sel,
 output hsync,
 output vsync,
 output [3:0]vga_r,
 output [3:0]vga_g,
-output [3:0]vga_b
+output [3:0]vga_b,
+
+inout MDIO,
+output MDC,
+output RESET,
+inout RXD0,
+inout RXD1,
+inout RXERR,
+output TXD0,
+output TXD1,
+output TXEN,
+inout CRS_DV,
+inout REF_CLKO,
+output CLKIN
+
+
+
+,
+output [7:0] o_seg,
+output [7:0] o_sel
     );
 wire locked;
 wire exc;
@@ -43,15 +59,17 @@ wire [31:0]inst,pc,addr;
 wire inta,intr;
 wire clk;
 wire [31:0]data_fmem;
-wire [31:0]data_fvga;
+// wire [31:0]data_fvga;
 wire rst=reset|~locked;
 wire [31:0]ip_in;
 wire seg7_cs,switch_cs;
+wire[31:0]eth_data;
 
 assign ip_in = pc-32'h00400000;
 
 wire dmem_cs;
 wire vga_cs;
+wire enet_cs;
 wire clk_vga;
 
 clk_wiz_0 clk_inst
@@ -75,11 +93,28 @@ io_sel io_mem(
    .sig_w(DM_W),
    .sig_r(DM_R),
    .dmem_cs(dmem_cs),
-   .vga_cs(vga_cs)
+   .vga_cs(vga_cs),
+   .enet_cs(enet_cs)
     );
 
 CPU54 sccpu(clk,rst,inst,rdata,pc,addr,wdata,IM_R,DM_CS,DM_R,DM_W,intr,inta);
 //rdata 从dmem中读取来的数据
+
+
+wire ether_ack;
+reg temp_intr;
+assign intr=temp_intr;
+always @(posedge clk_in or posedge rst) begin
+  if (rst) begin
+    temp_intr<=0;
+  end
+  else if (ether_ack) begin
+    temp_intr<=1;
+  end
+  else if(temp_intr==1 && enet_cs)
+    temp_intr<=0;
+
+end
 
 
 /*指令存储器*/
@@ -102,29 +137,50 @@ dist_dmem_ip DMEM (
 );
 
 
-//dmem scdmem(~clk,reset,DM_CS,DM_W,DM_R,addr-32'h10010000,wdata,data_fmem);
 
 
-
-// seg7x16 seg7(clk, reset, seg7_cs, wdata, o_seg, o_sel);
-
-// sw_mem_sel sw_mem(switch_cs, sw, data_fmem, rdata);
-
-    vga vga_inst(
-.clk_in(clk),//50M
-.clk_in_25(clk_vga),
-.rst_in(rst),
-.i_data(wdata),
-.we(vga_cs&DM_W),
+vga vga_inst(
+.clk_in(clk_vga),//25M
+.clk100(clk_in),
+.rst(rst),
+.idata(wdata),
+.cs(vga_cs&DM_W),
 .hsync(hsync),
 .vsync(vsync),
 .vga_r(vga_r),
 .vga_g(vga_g),
-.vga_b(vga_b),
-.intr(intr),
-.o_data(data_fvga)
+.vga_b(vga_b)
     );
 
-  assign rdata = vga_cs?data_fvga:data_fmem;
-   
+
+EthernetR etr_inst(
+.clk(clk_in), 
+.rst(rst),
+.MDIO(MDIO),
+.MDC(MDC),
+.RESET(RESET),
+.RXD0(RXD0),
+.RXD1(RXD1),
+.RXERR(RXERR),
+.TXD0(TXD0),
+.TXD1(TXD1),
+.TXEN(TXEN),
+.CRS_DV(CRS_DV),
+.REF_CLKO(REF_CLKO),
+.CLKIN(CLKIN),
+.receive_ack(ether_ack),
+.odata(eth_data)
+    );
+
+assign rdata = enet_cs?eth_data:data_fmem;
+
+// seg7x16 sx_inst(
+// .clk(clk_in),
+// .reset(rst),
+// .cs(1),
+// .i_data(eth_data),
+// //.i_data(wdata),
+// .o_seg(o_seg),
+// .o_sel(o_sel)
+//     );
 endmodule

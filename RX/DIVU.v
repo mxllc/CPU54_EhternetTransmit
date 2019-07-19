@@ -21,14 +21,14 @@
 
 
 module DIVU(
-	input [31:0]dividend,         //被除数
-    input [31:0]divisor,          //除数
-    input start,                  //启动除法运算
+	input [31:0]dividend,         //±?????
+    input [31:0]divisor,          //????
+    input start,                  //??????·¨????
     input clock,
     input reset,
-    output [31:0]q,               //商
-    output [31:0]r,               //余数    
-    output reg busy,                   //除法器忙标志位
+    output [31:0]q,               //??
+    output [31:0]r,               //?à??    
+    output reg busy,                   //??·¨?÷??±ê????
     output reg over
     );
 
@@ -37,7 +37,7 @@ module DIVU(
 	reg [31:0] reg_r;
 	reg [31:0] reg_b;
 	reg r_sign;
-	wire [32:0] sub_add = r_sign?({reg_r,q[31]} + {1'b0,reg_b}):({reg_r,q[31]} - {1'b0,reg_b});    //加、减法器
+	wire [32:0] sub_add = r_sign?({reg_r,q[31]} + {1'b0,reg_b}):({reg_r,q[31]} - {1'b0,reg_b});    //??????·¨?÷
 	assign r = r_sign? reg_r + reg_b : reg_r;
 	assign q = reg_q; 
 

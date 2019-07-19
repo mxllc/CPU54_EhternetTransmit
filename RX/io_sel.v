@@ -20,15 +20,18 @@
 //////////////////////////////////////////////////////////////////////////////////
 module io_sel(
     input [31:0] addr,
-	 input cs,
-	 input sig_w,
-	 input sig_r,
-	 output dmem_cs,
-	 output vga_cs
+     input cs,
+     input sig_w,
+     input sig_r,
+     output dmem_cs,
+     output vga_cs,
+     output enet_cs
     );
 
 // assign seg7_cs = (addr == 32'h10010000 && cs == 1 && sig_w == 1) ? 1 : 0;
 // assign switch_cs = (addr == 32'h10010010 && cs == 1 && sig_r == 1) ? 1 : 0;
-	assign vga_cs = ((addr == 32'h10810000 | addr == 32'h10810004)&& cs == 1) ? 1 : 0;
-	assign dmem_cs = cs & (~vga_cs);
+    // assign vga_cs = ((addr == 32'h10810000 | addr == 32'h10810004)&& cs == 1) ? 1 : 0;
+    assign vga_cs = ((addr == 32'h10810000)&& cs == 1) ? 1 : 0;
+    assign enet_cs = ((addr == 32'h10810004)&& cs == 1) ? 1 : 0;
+    assign dmem_cs = cs & (~enet_cs);
 endmodule

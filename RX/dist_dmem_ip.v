@@ -61,7 +61,7 @@ module dist_dmem_ip (
   spo
 );
 
-input wire [13 : 0] a;
+input wire [10 : 0] a;
 input wire [31 : 0] d;
 input wire clk;
 input wire we;
@@ -69,9 +69,9 @@ output wire [31 : 0] spo;
 
   dist_mem_gen_v8_0_11 #(
     .C_FAMILY("artix7"),
-    .C_ADDR_WIDTH(14),
+    .C_ADDR_WIDTH(11),
     .C_DEFAULT_DATA("0"),
-    .C_DEPTH(16320),
+    .C_DEPTH(2048),
     .C_HAS_CLK(1),
     .C_HAS_D(1),
     .C_HAS_DPO(0),
@@ -88,13 +88,13 @@ output wire [31 : 0] spo;
     .C_HAS_QSPO_SRST(0),
     .C_HAS_SPO(1),
     .C_HAS_WE(1),
-    .C_MEM_INIT_FILE("dist_dmem_ip.mif"),
+    .C_MEM_INIT_FILE("no_coe_file_loaded"),
     .C_ELABORATION_DIR("./"),
     .C_MEM_TYPE(1),
     .C_PIPELINE_STAGES(0),
     .C_QCE_JOINED(0),
     .C_QUALIFY_WE(0),
-    .C_READ_MIF(1),
+    .C_READ_MIF(0),
     .C_REG_A_D_INPUTS(0),
     .C_REG_DPRA_INPUT(0),
     .C_SYNC_ENABLE(1),
@@ -103,7 +103,7 @@ output wire [31 : 0] spo;
   ) inst (
     .a(a),
     .d(d),
-    .dpra(14'B0),
+    .dpra(11'B0),
     .clk(clk),
     .we(we),
     .i_ce(1'D1),
